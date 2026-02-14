@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Валентинка</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at top, #ffdde1, #ee9ca7);
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      color: #5c1834;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      position: relative;
+      z-index: 10;
+      max-width: 90%;
+    }
+
+    h1 { font-size: 2.5rem; margin-bottom: 20px; }
+    p { margin-bottom: 30px; font-size: 1.2rem; opacity: 0.9; }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      position: relative;
+    }
+
+    button {
+      border: none;
+      padding: 15px 32px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    #yesBtn {
+      background: #ff4b6e;
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 75, 110, 0.4);
+      z-index: 20;
+    }
+
+    #yesBtn:hover { transform: scale(1.05); }
+
+    #noBtn {
+      background: #fff;
+      color: #ff4b6e;
+      border: 2px solid #ff4b6e;
+      position: relative;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .modal img {
+      max-width: 80%;
+      max-height: 60vh;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+
+    .modal p {
+      color: white;
+      margin-top: 20px;
+      font-size: 1.5rem;
+    }
+
+    .close-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: white;
+      color: black;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .final-message {
+      margin-top: 20px;
+      font-size: 1.5rem;
+      color: #c2185b;
+      display: none;
+    }
+
+    /* Базовый вид сердечка */
+    .heart-confetti {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      background-color: #ff4b6e;
+      transform: rotate(45deg);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .heart-confetti::before,
+    .heart-confetti::after {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background-color: inherit;
+      border-radius: 50%;
+    }
+
+    .heart-confetti::before {
+      top: -7px;
+      left: 0;
+    }
+
+    .heart-confetti::after {
+      left: -7px;
+      top: 0;
+    }
+
+    /* Три слоя с разной скоростью и "глубиной" */
+    .layer-slow {
+      animation: heart-fall 7s linear infinite;
+      z-index: 3;
+      opacity: 0.7;
+    }
+
+    .layer-medium {
+      animation: heart-fall 5s linear infinite;
+      z-index: 4;
+      opacity: 0.85;
+    }
+
+    .layer-fast {
+      animation: heart-fall 3s linear infinite;
+      z-index: 6;
+      opacity: 1;
+    }
+
+    @keyframes heart-fall {
+      0% {
+        transform: translateY(-10vh) rotate(45deg);
+      }
+      100% {
+        transform: translateY(110vh) rotate(45deg);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 id="mainTitle">Будешь моей валентинкой?</h1>
+    <p>Подумай хорошенько...</p>
+
+    <div class="buttons">
+      <button id="yesBtn">Да</button>
+      <button id="noBtn">Нет</button>
+    </div>
+
+    <div class="final-message" id="finalMessage">
+      Ура! ❤️ Я так и знал!
+    </div>
+  </div>
+
+  <div class="modal" id="gifModal">
+    <!-- Поставь свои пути/URL вместо E:\\... -->
+    <img src="E:\\mods\\Download.gif" alt="Sad Cat">
+    <p>Ты чё???????</p>
+    <button class="close-btn" onclick="closeModal()">Я передумала</button>
+    <audio id="sadSound" src="E:\\mods\\Download.mp3" loop></audio>
+  </div>
+
+  <script>
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const finalMessage = document.getElementById("finalMessage");
+    const mainTitle = document.getElementById("mainTitle");
+    const gifModal = document.getElementById("gifModal");
+    const sadSound = document.getElementById("sadSound");
+
+    let scaleLevel = 1;
+    let isMoving = false;
+
+    // Фразы для "Нет"
+    const noPhrases = [
+      "Точно?",
+      "Подумай ещё...",
+      "А если я красиво попрошу?",
+      "Ну пожалуйста :)",
+      "Не сопротивляйся судьбе",
+      "Ладно, нажимай «Да»"
+    ];
+    let noIndex = 0;
+
+    noBtn.addEventListener("mouseover", handleNoHover);
+    noBtn.addEventListener("click", showSadGif);
+
+    noBtn.addEventListener("touchstart", (e) => {
+      if (!isMoving) {
+        e.preventDefault();
+        handleNoHover();
+      }
+    });
+
+    function handleNoHover() {
+      if (!isMoving) {
+        noBtn.style.position = "fixed";
+        isMoving = true;
+      }
+
+      const x = Math.random() * (window.innerWidth - noBtn.offsetWidth - 40) + 20;
+      const y = Math.random() * (window.innerHeight - noBtn.offsetHeight - 40) + 20;
+
+      noBtn.style.left = `${x}px`;
+      noBtn.style.top = `${y}px`;
+
+      noBtn.textContent = noPhrases[noIndex];
+      noIndex = (noIndex + 1) % noPhrases.length;
+
+      scaleLevel += 0.6;
+      yesBtn.style.transform = `scale(${scaleLevel})`;
+    }
+
+    function showSadGif() {
+      gifModal.style.display = "flex";
+      sadSound.currentTime = 0;
+      sadSound.loop = true;
+      sadSound.play().catch(() => {});
+    }
+
+    function closeModal() {
+      gifModal.style.display = "none";
+      sadSound.pause();
+      handleNoHover();
+    }
+
+    yesBtn.addEventListener("click", () => {
+      finalMessage.style.display = "block";
+      mainTitle.innerText = "Я люблю тебя! ❤️";
+      document.querySelector(".buttons").style.display = "none";
+      document.querySelector(".container p").style.display = "none";
+      launchHearts(180);
+    });
+
+    // Несколько "слоёв" сердечек с разной скоростью
+    function launchHearts(count) {
+      for (let i = 0; i < count; i++) {
+        // случайно выбираем слой
+        const r = Math.random();
+        let layerClass;
+        if (r < 0.33) layerClass = "layer-slow";
+        else if (r < 0.66) layerClass = "layer-medium";
+        else layerClass = "layer-fast";
+
+        createHeart(layerClass);
+      }
+    }
+
+    function createHeart(layerClass) {
+      const heart = document.createElement("div");
+      heart.classList.add("heart-confetti", layerClass);
+
+      const startLeft = Math.random() * 100; // vw
+      heart.style.left = startLeft + "vw";
+      // старт немного выше экрана, чтобы не выскакивали резко
+      heart.style.top = (-20 - Math.random() * 40) + "vh";
+      heart.style.backgroundColor = randomHeartColor();
+
+      // маленький разброс по фазе, чтобы не падали "стройными рядами"
+      const delay = -Math.random() * 7; // отрицательная задержка [web:52][web:54]
+      heart.style.animationDelay = delay + "s";
+
+      document.body.appendChild(heart);
+    }
+
+    function randomHeartColor() {
+      const colors = ["#ff4b6e", "#ff8aa7", "#ffc1e3", "#ffe082", "#c5e1a5"];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+  </script>
+
+</body>
+</html>
